@@ -4,24 +4,6 @@ const {
     Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
 } = tiny;
 
-
-class Cube extends Shape {
-    constructor() {
-        super("position", "normal",);
-        // Loop 3 times (for each axis), and inside loop twice (for opposing cube sides):
-        this.arrays.position = Vector3.cast(
-            [-1, -1, -1], [1, -1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, -1], [-1, 1, -1], [1, 1, 1], [-1, 1, 1],
-            [-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1], [1, -1, 1], [1, -1, -1], [1, 1, 1], [1, 1, -1],
-            [-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1], [1, -1, -1], [-1, -1, -1], [1, 1, -1], [-1, 1, -1]);
-        this.arrays.normal = Vector3.cast(
-            [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0],
-            [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [-1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0], [1, 0, 0],
-            [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, 1], [0, 0, -1], [0, 0, -1], [0, 0, -1], [0, 0, -1]);
-        // Arrange the vertices into a square shape in texture space too:
-        this.indices.push(0, 1, 2, 1, 3, 2, 4, 5, 6, 5, 7, 6, 8, 9, 10, 9, 11, 10, 12, 13,
-            14, 13, 15, 14, 16, 17, 18, 17, 19, 18, 20, 21, 22, 21, 23, 22);
-    }
-}
 class Square extends Shape {
     constructor() {
         super("position", "normal",);
@@ -52,12 +34,13 @@ export class Run extends Scene {
 
         // Hall config
         this.hall_width = 3
+        this.step_depth = 5
+
         this.max_depth = 30
-        this.min_depth = 0
-        this.step_depth = 1
+        this.min_depth = -this.step_depth
 
         // Dynamics
-        this.speed = 1.0 // in units / second
+        this.speed = 4.0 // in units / second
         //this.speed = 0.0 // Freeze scene
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
@@ -178,7 +161,7 @@ class StepFactory{
         this.width = width;
         this.depth = depth;
     }
-    make_step(){
+    make_full_step(){
 
         let s = new Step()
         let m = Mat4.identity()
@@ -231,7 +214,7 @@ class Hall{
         this.active_steps = []
         for (let n=0; n<1; n++){
             this.active_steps.push(
-                [n*this.step_depth, this.step_factory.make_step()]
+                [n*this.step_depth, this.step_factory.make_full_step()]
             )
             this.last_step_depth = n*this.step_depth;
         }
@@ -256,7 +239,7 @@ class Hall{
         if(this.last_step_depth < this.max_depth){
             //console.log('new step')
             this.active_steps.push(
-                [this.last_step_depth +this.step_depth*2, this.step_factory.make_step()]
+                [this.last_step_depth +this.step_depth*2, this.step_factory.make_full_step()]
             )
             this.last_step_depth = this.last_step_depth + this.step_depth*2
         }
