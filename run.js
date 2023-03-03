@@ -27,7 +27,7 @@ class Square extends Shape {
         super("position", "normal",);
         // Loop 3 times (for each axis), and inside loop twice (for opposing cube sides):
         this.arrays.position = Vector3.cast(
-            [0, 0, 0], [1, 0, 0], [1, 0, -1], [0, 0, -1]);
+            [-1, 0, 1], [1, 0, 1], [1, 0, -1], [-1, 0, -1]);
         this.arrays.normal = Vector3.cast(
             [0, 1, 0], [0, 1, 0], [0, 1, 0], [0, 1, 0]);
         // Arrange the vertices into a square shape in texture space too:
@@ -50,12 +50,15 @@ export class Run extends Scene {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
 
-
-        this.hall_height = 3
+        // Hall config
         this.hall_width = 3
         this.max_depth = 30
         this.min_depth = 0
+        this.step_depth = 1
+
+        // Dynamics
         this.speed = 1.0 // in units / second
+        //this.speed = 0.0 // Freeze scene
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
@@ -84,9 +87,11 @@ export class Run extends Scene {
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 5, 10), vec3(0, 0, 0), vec3(0, 1, 0));
-        this.initial_camera_location = Mat4.look_at(vec3(0, this.hall_height/3, 0), vec3(0, this.hall_height/3, -1), vec3(0, 1, 0));
+        // hall width is the same as height
+        this.initial_camera_location = Mat4.look_at(vec3(0, this.hall_width/3, 0), vec3(0, this.hall_width/3, -1), vec3(0, 1, 0));
+        //this.initial_camera_location = Mat4.look_at(vec3(0, this.hall_width/3, 3), vec3(0, 0, 0), vec3(0, 1, 0));
 
-        this.hall = new Hall(this.hall_height, this.hall_width, this.min_depth, this.max_depth);
+        this.hall = new Hall(this.hall_width, this.step_depth, this.min_depth, this.max_depth);
 
     }
     attached(){return  null};
@@ -169,58 +174,66 @@ export class Run extends Scene {
 
 
 class StepFactory{
-    constructor(height, width) {
-        this.height = height;
+    constructor(width, depth) {
         this.width = width;
+        this.depth = depth;
     }
     make_step(){
 
         let s = new Step()
+        let m = Mat4.identity()
+        m = m.times(this.make_base())
+
+        //Square.insert_transformed_copy_into(s, [], m)
         Square.insert_transformed_copy_into(s, [], this.make_base())
         Square.insert_transformed_copy_into(s, [], this.make_left())
         Square.insert_transformed_copy_into(s, [], this.make_right())
         Square.insert_transformed_copy_into(s, [], this.make_top())
-        
+
         return s
     }
     make_base(){
-        return Mat4.scale(this.width,1,1).times(Mat4.translation(-0.5, 0, 0));
+        return Mat4.scale(this.width/2,1,this.depth/2);
     }
     make_left(){
         let mat = Mat4.identity()
-        mat = mat.times(Mat4.rotation(Math.PI/2, 0, 0, 1))
-        mat = mat.times(Mat4.scale(this.width,1,1))
-        mat = mat.times(Mat4.translation(0, -0.5 * this.width, 0));
+        mat = mat.times(Mat4.rotation(-Math.PI/2, 0, 0, 1))
+        mat = mat.times(this.make_base())
+        mat = mat.times(Mat4.translation(-1,-this.width/2, 0))
         return mat
     }
     make_right(){
         let mat = Mat4.identity()
-        mat = mat.times(Mat4.rotation(Math.PI/2, 0, 0, 1))
-        mat = mat.times(Mat4.scale(this.width,1,1))
-        mat = mat.times(Mat4.translation(0, 0.5 * this.width, 0));
+        mat = mat.times(Mat4.rotation(+Math.PI/2, 0, 0, 1))
+        mat = mat.times(this.make_base())
+        mat = mat.times(Mat4.translation(+1,-this.width/2, 0))
         return mat
     }
     make_top(){
-        return Mat4.scale(this.width,1,1).times(Mat4.translation(-0.5, this.height, 0));
+        let mat = Mat4.identity()
+        mat = mat.times(Mat4.rotation(Math.PI, 0, 0, 1))
+        mat = mat.times(this.make_base())
+        mat = mat.times(Mat4.translation(0,-this.width, 0))
+        return mat
     }
 
 }
 
 class Hall{
-    constructor(height, width, min_depth, max_depth) {
-        this.height = height
+    constructor(width, step_depth, min_depth, max_depth, ) {
         this.width = width
         this.min_depth = min_depth
         this.max_depth = max_depth
+        this.step_depth = step_depth
 
-        this.step_factory = new StepFactory(height, width)
+        this.step_factory = new StepFactory(width, step_depth)
         // each element of acive steps consists on a step depth and Step object.
         this.active_steps = []
-        for (let n=0; n<10; n++){
+        for (let n=0; n<1; n++){
             this.active_steps.push(
-                [n*2, this.step_factory.make_step()]
+                [n*this.step_depth, this.step_factory.make_step()]
             )
-            this.last_step_depth = n*2;
+            this.last_step_depth = n*this.step_depth;
         }
     }
     pull_hall(d){
@@ -243,9 +256,9 @@ class Hall{
         if(this.last_step_depth < this.max_depth){
             //console.log('new step')
             this.active_steps.push(
-                [this.last_step_depth + 2, this.step_factory.make_step()]
+                [this.last_step_depth +this.step_depth*2, this.step_factory.make_step()]
             )
-            this.last_step_depth = this.last_step_depth + 2
+            this.last_step_depth = this.last_step_depth + this.step_depth*2
         }
     }
 }
