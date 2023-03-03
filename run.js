@@ -36,6 +36,15 @@ class Square extends Shape {
         this.indices.push(0, 3, 1, 1, 3, 2)
     }
 }
+
+class Step extends Shape{
+    constructor() {
+        super("position", "normal",);
+        this.arrays.position = Vector3.cast()
+        this.arrays.normal = Vector3.cast()
+
+    }
+}
 export class Run extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -114,11 +123,7 @@ export class Run extends Scene {
             const step_depth = this.hall.active_steps[i][0]
             const push_back_transform = Mat4.translation(0, 0, -step_depth)
             const step = this.hall.active_steps[i][1]
-            let rectangle_transform
-            for(let j=0; j<step.rectangle_transforms.length; j++) {
-                rectangle_transform = push_back_transform.times(step.rectangle_transforms[j])
-                this.shapes.square.draw(context, program_state, rectangle_transform, this.materials.test)
-            }
+            step.draw(context, program_state, push_back_transform, this.materials.test)
         }
     }
 
@@ -161,11 +166,7 @@ export class Run extends Scene {
 }
 
 
-class Step{
-    constructor(rectangle_transforms) {
-        this.rectangle_transforms = rectangle_transforms;
-    }
-}
+
 
 class StepFactory{
     constructor(height, width) {
@@ -173,12 +174,14 @@ class StepFactory{
         this.width = width;
     }
     make_step(){
-        let rectangles = []
-        rectangles.push(this.make_base());
-        rectangles.push(this.make_left());
-        rectangles.push(this.make_right());
-        rectangles.push(this.make_top())
-        return new Step(rectangles)
+
+        let s = new Step()
+        Square.insert_transformed_copy_into(s, [], this.make_base())
+        Square.insert_transformed_copy_into(s, [], this.make_left())
+        Square.insert_transformed_copy_into(s, [], this.make_right())
+        Square.insert_transformed_copy_into(s, [], this.make_top())
+        
+        return s
     }
     make_base(){
         return Mat4.scale(this.width,1,1).times(Mat4.translation(-0.5, 0, 0));
