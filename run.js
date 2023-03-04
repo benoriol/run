@@ -54,13 +54,6 @@ export class Run extends Scene {
             square: new Square()
         };
 
-        this.planets_shapes = [
-            new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
-            new defs.Subdivision_Sphere(3),
-            new defs.Subdivision_Sphere(4),
-            new defs.Subdivision_Sphere(4),
-        ]
-        this.moon_shape = new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1);
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
