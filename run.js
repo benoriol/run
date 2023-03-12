@@ -83,6 +83,9 @@ export class Run extends Scene {
         .times(Mat4.translation(0, 0.3, -3))
         .times(Mat4.scale(0.2, 0.2, 0.2));
 
+        //matrix for position
+        this.position = 0.0;
+
         this.jump = false;
         /* BAD PHYSICS
         this.y = 0;
@@ -93,12 +96,25 @@ export class Run extends Scene {
     }
 
     move_left() {
-        this.body = this.body.times(Mat4.translation(-0.3, 0, 0))
+        if ((this.position + -0.3) <= -6.0) {
+            console.log("Edge");
+        } else {
+            this.body = this.body.times(Mat4.translation(-0.3, 0, 0))
+            this.position += -0.3;
+        }
         console.log(this.body)
+        console.log(this.position);
     }
 
     move_right() {
-        this.body = this.body.times(Mat4.translation(0.3, 0, 0))
+        if ((this.position + 0.3) >= 6.0) {
+            console.log("Edge");
+        } else {
+            this.body = this.body.times(Mat4.translation(0.3, 0, 0))
+            this.position += 0.3;
+        }
+        console.log(this.body)
+        console.log(this.position);
     }
 
     make_control_panel() {
@@ -250,7 +266,6 @@ export class Run extends Scene {
         this.draw_hall(context, program_state)
 
         this.draw_character(context, program_state);
-
         
     }
 }
