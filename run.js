@@ -24,9 +24,9 @@ class Step extends Shape{
         super("position", "normal",);
         this.arrays.position = Vector3.cast()
         this.arrays.normal = Vector3.cast()
-
     }
 }
+
 export class Run extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
@@ -52,6 +52,14 @@ export class Run extends Scene {
             circle: new defs.Regular_2D_Polygon(1, 15),
             // TODO:  Fill in as many additional shape instances as needed in this key/value table.
             //        (Requirement 1)
+
+            // ** character model **
+            body: new defs.Subdivision_Sphere(4),
+            left_leg: new defs.Capped_Cylinder(100, 100),
+            right_leg: new defs.Capped_Cylinder(100, 100),
+            left_arm: new defs.Capped_Cylinder(100, 100),
+            right_arm: new defs.Capped_Cylinder(100, 100),
+
             square: new Square()
         };
 
@@ -70,11 +78,49 @@ export class Run extends Scene {
 
         this.hall = new Hall(this.hall_width, this.step_depth, this.min_depth, this.max_depth);
 
+
+        // TODO: put this into a Character data structure and call new Character() instead
+        this.body = Mat4.identity()
+        .times(Mat4.translation(0, 0.3, -3))
+        .times(Mat4.scale(0.2, 0.2, 0.2));
+
+        //matrix for position
+        this.position = 0.0;
+
+        this.jump = false;
+        /* BAD PHYSICS
+        this.y = 0;
+            this.dy = 0.001;
+            this.height = 2;
+            this.g = 0.0166;
+        */
     }
-    attached(){return  null};
+
+    move_left() {
+        if ((this.position + -0.3) <= -6.0) {
+            console.log("Edge");
+        } else {
+            this.body = this.body.times(Mat4.translation(-0.3, 0, 0))
+            this.position += -0.3;
+        }
+        console.log(this.body)
+        console.log(this.position);
+    }
+
+    move_right() {
+        if ((this.position + 0.3) >= 6.0) {
+            console.log("Edge");
+        } else {
+            this.body = this.body.times(Mat4.translation(0.3, 0, 0))
+            this.position += 0.3;
+        }
+        console.log(this.body)
+        console.log(this.position);
+    }
+
     make_control_panel() {
-        // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => null);
+  /*      // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
+        this.key_triggppered_button("View solar system", ["Control", "0"], () => this.attached = () => null);
         this.new_line();
         this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
         this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
@@ -83,6 +129,12 @@ export class Run extends Scene {
         this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
         this.new_line();
         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+*/
+        this.key_triggered_button("Left", ["j"], this.move_left);
+        this.key_triggered_button("Right", ["l"], this.move_right);
+
+        // does nothing right now
+        this.key_triggered_button("Jump", ["n"], () => this.jump = true);
     }
 
 
@@ -94,6 +146,75 @@ export class Run extends Scene {
             const step = this.hall.active_steps[i][1]
             step.draw(context, program_state, push_back_transform, this.materials.test)
         }
+    }
+
+
+    draw_character(context, program_state) {
+        let t = program_state.animation_time / 1000;
+        let body = Mat4.identity();
+        body = body
+        .times(Mat4.translation(0, 0.3, -3))
+        .times(Mat4.scale(0.2, 0.2, 0.2))
+        
+        let right_leg = this.body;
+        right_leg = right_leg
+        .times(Mat4.translation(0.3, 0, 0))
+        .times(Mat4.rotation(0.5 * Math.sin(Math.PI * t), 1, 0, 0))
+        .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
+        .times(Mat4.translation(0, 0, -1))
+        .times(Mat4.scale(0.2, 0.2, 1))
+
+        let left_leg = this.body;
+        left_leg = left_leg
+        .times(Mat4.translation(-0.3, 0, 0))
+        .times(Mat4.rotation(0.5 * Math.sin(-Math.PI * t), 1, 0, 0))
+        .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0))
+        .times(Mat4.translation(0, 0, -1))
+        .times(Mat4.scale(0.2, 0.2, 1))
+
+        let right_arm = this.body;
+        right_arm = right_arm
+        .times(Mat4.translation(0.3, 0.8, 0))
+        .times(Mat4.rotation(0.5 * Math.sin(-Math.PI * t), 1, 0, 0))
+        .times(Mat4.rotation(-Math.PI / 2, 1, 1, 0))
+        .times(Mat4.translation(0, 0, -1))
+        .times(Mat4.scale(0.2, 0.2, 1))
+
+        let left_arm = this.body;
+        left_arm = left_arm
+        .times(Mat4.rotation(Math.PI, 0, 1, 0))
+        .times(Mat4.translation(0.3, 0.8, 0))
+        .times(Mat4.rotation(0.5 * Math.sin(-Math.PI * t), 1, 0, 0))
+        .times(Mat4.rotation(Math.PI / 2, 1, 1, 0))
+        .times(Mat4.rotation(Math.PI, 0, 1, 0))
+        .times(Mat4.translation(0, 0, -1))
+        .times(Mat4.scale(0.2, 0.2, 1))
+
+        body = this.body;
+
+        /* BAD PHYSICS
+        if(this.jump) {
+            //console.log((dy * dt) + (g * dt))
+            console.log(Math.abs(this.y))
+            if(Math.abs(2 - body[1][3]) < 0.1)
+                this.y = -this.y; this.dy = -this.dy;
+            body = body.times(Mat4.translation(0, this.y, 0))
+
+            if(Math.abs(0.3 - body[1][3]) < 0.1)
+                this.jump = false;
+
+                this.dy += this.g;
+                this.y += this.dy;
+        } */
+
+
+        this.shapes.body.draw(context, program_state, body, this.materials.test2);
+        this.shapes.right_leg.draw(context, program_state, right_leg, this.materials.test2);
+        this.shapes.left_leg.draw(context, program_state, left_leg, this.materials.test2);
+        this.shapes.right_arm.draw(context, program_state, right_arm, this.materials.test2);
+        this.shapes.left_arm.draw(context, program_state, left_arm, this.materials.test2);
+
+        this.body = body;
     }
 
     display(context, program_state) {
@@ -131,11 +252,11 @@ export class Run extends Scene {
         this.hall.make_steps()
 
         this.draw_hall(context, program_state)
+
+        this.draw_character(context, program_state);
+        
     }
 }
-
-
-
 
 class StepFactory{
     constructor(width, depth) {
@@ -248,6 +369,9 @@ class Hall{
         }
     }
 }
+
+
+
 
 
 
