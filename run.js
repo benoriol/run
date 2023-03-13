@@ -138,16 +138,24 @@ export class Run extends Scene {
     }
 
 
-    draw_hall(context, program_state, angle=0){
+    draw_hall(context, program_state){
+
+        const angle = this.hall.current_angle
         const n_steps = this.hall.active_steps.length
+
+        let rotation_transform = Mat4.identity()
+        rotation_transform = rotation_transform.times(Mat4.translation(0, this.hall.width/2, 0))
+        rotation_transform = rotation_transform.times(Mat4.rotation(angle, 0, 0, 1))
+        rotation_transform = rotation_transform.times(Mat4.translation(0, -this.hall.width/2, 0))
+
         for (let i=0; i<n_steps; i++){
             const step_depth = this.hall.active_steps[i][0]
             const push_back_transform = Mat4.translation(0, 0, -step_depth)
             const step = this.hall.active_steps[i][1]
-            step.draw(context, program_state, push_back_transform, this.materials.test)
+            step.draw(context, program_state, push_back_transform.times(rotation_transform), this.materials.test)
         }
     }
-
+    rotated = false
 
     draw_character(context, program_state) {
         let t = program_state.animation_time / 1000;
@@ -215,6 +223,7 @@ export class Run extends Scene {
         this.shapes.left_arm.draw(context, program_state, left_arm, this.materials.test2);
 
         this.body = body;
+
     }
 
     display(context, program_state) {
@@ -249,7 +258,23 @@ export class Run extends Scene {
         this.hall.pull_hall(pull_distance)
 
         this.hall.clip_steps();
-        this.hall.make_steps()
+        this.hall.make_steps();
+
+
+        // The following code seems complicated but is only to automate a rotation every 2 seconds
+        // The hall can be rotated with this.hall.rotate('cw') or this.hall.rotate('ccw').
+        // update_current_angle is to allow for smooth transition.
+
+        if (Math.floor(t)%2 == 0){
+            if (!this.rotated) {
+                this.hall.rotate('cw')
+                this.rotated = true
+            }
+        } else {
+            this.rotated = false
+        }
+        // this parameter should be between 0 and 1. 0.07 seems ok.
+        this.hall.update_current_angle(0.07)
 
         this.draw_hall(context, program_state)
 
@@ -327,6 +352,9 @@ class Hall{
         this.max_depth = max_depth
         this.step_depth = step_depth
 
+        this.desired_angle=0
+        this.current_angle=0
+
         this.step_factory = new StepFactory(width, step_depth)
         // each element of acive steps consists on a step depth and Step object.
         this.active_steps = []
@@ -346,12 +374,20 @@ class Hall{
         }
         this.last_step_depth -= d
     }
-    rotate_hall(angle){
-        for(let i=0; i<this.active_steps.length; i++){
-            let s =
-            this.active_steps[i][1] -= d;
+    rotate(side){
+        if (side=='cw'){
+            this.desired_angle -= Math.PI/2
+        } else if (side=='ccw'){
+            this.desired_angle += Math.PI/2
         }
     }
+
+    update_current_angle(transition_speed)
+    {
+        // Transition speed has to go be between 0 (excluded) and 1 (instant transition)
+        this.current_angle = this.current_angle * (1-transition_speed) + this.desired_angle * transition_speed
+    }
+
     clip_steps(){
         let active_steps = []
         for(let i=0; i<this.active_steps.length; i++){
