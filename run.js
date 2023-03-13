@@ -346,6 +346,12 @@ class Hall{
         }
         this.last_step_depth -= d
     }
+    rotate_hall(angle){
+        for(let i=0; i<this.active_steps.length; i++){
+            let s =
+            this.active_steps[i][1] -= d;
+        }
+    }
     clip_steps(){
         let active_steps = []
         for(let i=0; i<this.active_steps.length; i++){
