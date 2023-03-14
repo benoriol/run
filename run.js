@@ -34,7 +34,7 @@ export class Run extends Scene {
 
         // Hall config
         this.hall_width = 3
-        this.step_depth = 5
+        this.step_depth = 10
 
         this.max_depth = 60
         this.min_depth = -this.step_depth
@@ -335,11 +335,23 @@ class StepFactory{
         return s
     }
 
-    make_platform_step(){
+    make_platform_step(randomize_position=true, angle=0.0){
         let s = new Step()
         let m = Mat4.identity()
+
+        m = m.times(Mat4.translation(0 , this.width/2, 0))
+        m = m.times(Mat4.rotation(angle, 0, 0, 1))
+        m = m.times(Mat4.translation(0 , -this.width/2, 0))
+
+        if (randomize_position) {
+            const random_position = (Math.random() - 0.5) * (this.width - 1)
+            m = m.times(Mat4.translation(random_position, 0, 0))
+        }
+
         m = m.times(Mat4.scale(0.5, 1, this.depth/2))
+
         Square.insert_transformed_copy_into(s, [],m)
+
         return s
     }
 
@@ -358,15 +370,8 @@ class Hall{
         this.step_factory = new StepFactory(width, step_depth)
         // each element of acive steps consists on a step depth and Step object.
         this.active_steps = []
-        for (let n=0; n<10; n++){
-            this.active_steps.push(
-                [2*n*this.step_depth, this.step_factory.make_full_step()]
-            )
-            this.active_steps.push(
-                [(2*n+1)*this.step_depth, this.step_factory.make_platform_step()]
-            )
-            this.last_step_depth = 2*n*this.step_depth;
-        }
+
+        this.init_steps()
     }
     pull_hall(d){
         for(let i=0; i<this.active_steps.length; i++){
@@ -399,16 +404,46 @@ class Hall{
     }
     make_steps(){
         //console.log(this.last_step_depth, this.max_depth)
-        if(this.last_step_depth < this.max_depth){
+        while(this.last_step_depth < this.max_depth){
             //console.log('new step')
             this.active_steps.push(
-                [this.last_step_depth + this.step_depth*2, this.step_factory.make_full_step()]
+                [this.last_step_depth + this.step_depth*3, this.step_factory.make_full_step()]
+            )
+
+            let angle= Math.floor(Math.random() * 3) * Math.PI / 2
+            this.active_steps.push(
+                [this.last_step_depth + this.step_depth*4, this.step_factory.make_platform_step(true, angle)]
             )
             this.active_steps.push(
-                [this.last_step_depth + this.step_depth*3, this.step_factory.make_platform_step()]
+                [this.last_step_depth + this.step_depth*5, this.step_factory.make_platform_step(true, angle)]
             )
-            this.last_step_depth = this.last_step_depth + this.step_depth*2
+            angle= angle + Math.floor(Math.random() * 2 + 1) * Math.PI / 2
+            this.active_steps.push(
+                [this.last_step_depth + this.step_depth*4, this.step_factory.make_platform_step(true, angle)]
+            )
+            if (Math.random() > 0.5) {
+                this.active_steps.push(
+                    [this.last_step_depth + this.step_depth * 5, this.step_factory.make_platform_step(true, angle)]
+                )
+            }
+            this.last_step_depth = this.last_step_depth + this.step_depth*3
         }
+    }
+    init_steps(){
+        const n_init_full=3 // Number of blocks with no holes at the beginning
+        for (let n=0; n<n_init_full; n++){
+            this.active_steps.push(
+                [n*this.step_depth, this.step_factory.make_full_step()]
+            )
+        }
+        this.active_steps.push(
+            [(n_init_full)*this.step_depth, this.step_factory.make_platform_step(true, 0)]
+        )
+        this.active_steps.push(
+            [(n_init_full+1)*this.step_depth, this.step_factory.make_platform_step(true, 0)]
+        )
+
+        this.last_step_depth = (n_init_full-1)*this.step_depth;
     }
 }
 
