@@ -86,10 +86,13 @@ export class Run extends Scene {
 
         //matrix for position
         this.position = 0.0;
-        this.x = 0;
 
-        this.jumpFlag = false;
+        this.jump_flag = false;
         this.prev = 0;
+        this.jump_velocity = 7;
+        this.y_0 = 0.3;
+        this.gravity = 9.81;
+        this.t = 0;
     }
     
     move_left() {
@@ -115,19 +118,17 @@ export class Run extends Scene {
     }
 
     jump() {
-        //console.log(dt)
-        let f = 0.01 * (-((this.x - 4)**2) + 18);
-        if(this.body[1][3] < 0.3) {
+        const f = 0.03 * (this.y_0 + this.jump_velocity * this.t - (0.5 * this.gravity * this.t**2));
+        if(this.body[1][3] <= 0.3 && this.prev >= this.body[1][3]) {
             this.body[1][3] = 0.3;
-            this.jumpFlag = false;
+            this.jump_flag = false;
             this.prev = 0;
-            this.x = 0;
+            this.t = 0;
         }
         else {
-            console.log('here')
             this.body = this.body.times(Mat4.translation(0, f, 0));
-            this.x += 0.1;
-            this.prev = f;
+            this.prev = this.body[1][3];
+            this.t += 0.01;
         }
         console.log(this.body)
     }
@@ -160,7 +161,7 @@ export class Run extends Scene {
         this.key_triggered_button("Right", ["l"], this.move_right);
 
         // does nothing right now
-        this.key_triggered_button("Jump", [" "], () => this.jumpFlag = true);
+        this.key_triggered_button("Jump", [" "], () => this.jump_flag = true);
 
         this.key_triggered_button("Rotate clockwise", ["r"], this.rotate_cw);
         this.key_triggered_button("Rotate counterclockwise", ["w"], this.rotate_ccw);
@@ -227,8 +228,8 @@ export class Run extends Scene {
         .times(Mat4.translation(0, 0, -1))
         .times(Mat4.scale(0.2, 0.2, 1))
 
-        if(this.jumpFlag)
-            this.jump();
+        if(this.jump_flag)
+            this.jump(t);
 
         body = this.body;
 
