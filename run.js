@@ -89,15 +89,9 @@ export class Run extends Scene {
         this.x = 0;
 
         this.jumpFlag = false;
-        this.onGround = false;
+        this.prev = 0;
     }
     
-    gravity() {
-        if(this.y - 0.3 <= 0.03) {
-            console.log("ground")
-        }
-    }
-
     move_left() {
         if ((this.position + -0.3) <= -6.0) {
             console.log("Edge");
@@ -119,19 +113,24 @@ export class Run extends Scene {
         console.log(this.body)
         console.log(this.position);
     }
-/*
+
     jump() {
-        let f = -((this.x - 0.94)**2) + 0.2;
-        if(f - 0.3 < 0.01 && !this.onGround) {
-            this.jumpFlag = !this.jumpFlag;
-            return
+        //console.log(dt)
+        let f = 0.01 * (-((this.x - 4)**2) + 18);
+        if(this.body[1][3] < 0.3) {
+            this.body[1][3] = 0.3;
+            this.jumpFlag = false;
+            this.prev = 0;
+            this.x = 0;
         }
-        if(!this.jumpFlag)
-            return
-        else
+        else {
+            console.log('here')
             this.body = this.body.times(Mat4.translation(0, f, 0));
+            this.x += 0.1;
+            this.prev = f;
+        }
         console.log(this.body)
-    }*/
+    }
 
     rotate_cw() {
         this.rotated = false;
@@ -161,7 +160,7 @@ export class Run extends Scene {
         this.key_triggered_button("Right", ["l"], this.move_right);
 
         // does nothing right now
-        this.key_triggered_button("Jump", ["n"], () => this.jumpFlag = true);
+        this.key_triggered_button("Jump", [" "], () => this.jumpFlag = true);
 
         this.key_triggered_button("Rotate clockwise", ["r"], this.rotate_cw);
         this.key_triggered_button("Rotate counterclockwise", ["w"], this.rotate_ccw);
@@ -227,11 +226,10 @@ export class Run extends Scene {
         .times(Mat4.rotation(Math.PI, 0, 1, 0))
         .times(Mat4.translation(0, 0, -1))
         .times(Mat4.scale(0.2, 0.2, 1))
-/*
-        console.log(this.jumpFlag)
+
         if(this.jumpFlag)
-            this.jump(t);
-*/
+            this.jump();
+
         body = this.body;
 
         this.shapes.body.draw(context, program_state, body, this.materials.test2);
