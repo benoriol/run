@@ -86,14 +86,16 @@ export class Run extends Scene {
 
         //matrix for position
         this.position = 0.0;
+        this.x = 0;
 
-        this.jump = false;
-        /* BAD PHYSICS
-        this.y = 0;
-            this.dy = 0.001;
-            this.height = 2;
-            this.g = 0.0166;
-        */
+        this.jumpFlag = false;
+        this.onGround = false;
+    }
+    
+    gravity() {
+        if(this.y - 0.3 <= 0.03) {
+            console.log("ground")
+        }
     }
 
     move_left() {
@@ -117,6 +119,31 @@ export class Run extends Scene {
         console.log(this.body)
         console.log(this.position);
     }
+/*
+    jump() {
+        let f = -((this.x - 0.94)**2) + 0.2;
+        if(f - 0.3 < 0.01 && !this.onGround) {
+            this.jumpFlag = !this.jumpFlag;
+            return
+        }
+        if(!this.jumpFlag)
+            return
+        else
+            this.body = this.body.times(Mat4.translation(0, f, 0));
+        console.log(this.body)
+    }*/
+
+    rotate_cw() {
+        this.rotated = false;
+        this.hall.rotate('cw');
+        this.rotated = true;
+    }
+
+    rotate_ccw() {
+        this.rotated = false;
+        this.hall.rotate('ccw');
+        this.rotated = true;
+    }
 
     make_control_panel() {
   /*      // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
@@ -134,7 +161,10 @@ export class Run extends Scene {
         this.key_triggered_button("Right", ["l"], this.move_right);
 
         // does nothing right now
-        this.key_triggered_button("Jump", ["n"], () => this.jump = true);
+        this.key_triggered_button("Jump", ["n"], () => this.jumpFlag = true);
+
+        this.key_triggered_button("Rotate clockwise", ["r"], this.rotate_cw);
+        this.key_triggered_button("Rotate counterclockwise", ["w"], this.rotate_ccw);
     }
 
 
@@ -155,7 +185,7 @@ export class Run extends Scene {
             step.draw(context, program_state, push_back_transform.times(rotation_transform), this.materials.test)
         }
     }
-    rotated = false
+    rotated = false;
 
     draw_character(context, program_state) {
         let t = program_state.animation_time / 1000;
@@ -197,24 +227,12 @@ export class Run extends Scene {
         .times(Mat4.rotation(Math.PI, 0, 1, 0))
         .times(Mat4.translation(0, 0, -1))
         .times(Mat4.scale(0.2, 0.2, 1))
-
+/*
+        console.log(this.jumpFlag)
+        if(this.jumpFlag)
+            this.jump(t);
+*/
         body = this.body;
-
-        /* BAD PHYSICS
-        if(this.jump) {
-            //console.log((dy * dt) + (g * dt))
-            console.log(Math.abs(this.y))
-            if(Math.abs(2 - body[1][3]) < 0.1)
-                this.y = -this.y; this.dy = -this.dy;
-            body = body.times(Mat4.translation(0, this.y, 0))
-
-            if(Math.abs(0.3 - body[1][3]) < 0.1)
-                this.jump = false;
-
-                this.dy += this.g;
-                this.y += this.dy;
-        } */
-
 
         this.shapes.body.draw(context, program_state, body, this.materials.test2);
         this.shapes.right_leg.draw(context, program_state, right_leg, this.materials.test2);
@@ -223,14 +241,13 @@ export class Run extends Scene {
         this.shapes.left_arm.draw(context, program_state, left_arm, this.materials.test2);
 
         this.body = body;
-
     }
 
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+            //this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(this.initial_camera_location);
         }
@@ -265,6 +282,7 @@ export class Run extends Scene {
         // The hall can be rotated with this.hall.rotate('cw') or this.hall.rotate('ccw').
         // update_current_angle is to allow for smooth transition.
 
+        /*
         if (Math.floor(t)%2 == 0){
             if (!this.rotated) {
                 this.hall.rotate('cw')
@@ -272,14 +290,13 @@ export class Run extends Scene {
             }
         } else {
             this.rotated = false
-        }
+        }*/
         // this parameter should be between 0 and 1. 0.07 seems ok.
         this.hall.update_current_angle(0.07)
 
         this.draw_hall(context, program_state)
 
         this.draw_character(context, program_state);
-        
     }
 }
 
