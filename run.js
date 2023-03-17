@@ -41,7 +41,7 @@ export class Run extends Scene {
 
         // Dynamics
         this.speed = 4.0 // in units / second
-        this.speed = 10.0 // in units / second
+        //this.speed = 10.0 // in units / second
         //this.speed = 0.0 // Freeze scene
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
@@ -179,11 +179,40 @@ export class Run extends Scene {
         rotation_transform = rotation_transform.times(Mat4.translation(0, this.hall.width/2, 0))
         rotation_transform = rotation_transform.times(Mat4.rotation(angle, 0, 0, 1))
         rotation_transform = rotation_transform.times(Mat4.translation(0, -this.hall.width/2, 0))
-
+        let printed = false
+        let m = Mat4.rotation(angle, 0, 0, 1)
+        let v1, v2
         for (let i=0; i<n_steps; i++){
             const step_depth = this.hall.active_steps[i][0]
             const push_back_transform = Mat4.translation(0, 0, -step_depth)
             const step = this.hall.active_steps[i][1]
+            if(step_depth < 0.2 && step_depth > 0){
+                if (!printed){
+                    console.log('new step')
+                    v1 = vec4(
+                        this.hall.active_steps[i][1].arrays.position[0][0],
+                        this.hall.active_steps[i][1].arrays.position[0][1]-1.5,
+                        this.hall.active_steps[i][1].arrays.position[0][2],
+                        1)
+
+                    v1 = m.times(v1)
+
+                    v2 = vec4(
+                        this.hall.active_steps[i][1].arrays.position[1][0],
+                        this.hall.active_steps[i][1].arrays.position[1][1]-1.5,
+                        this.hall.active_steps[i][1].arrays.position[1][2],
+                        1)
+
+                    v2 = m.times(v2)
+                    if (v2[1]< 0.05){
+                        console.log('platform at', v1[0], v2[0])
+                    }
+                    printed=true
+                }
+            }
+            else{
+                printed = false
+            }
             step.draw(context, program_state, push_back_transform.times(rotation_transform), this.materials.test)
         }
     }
