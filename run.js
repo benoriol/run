@@ -89,9 +89,9 @@ export class Run extends Scene {
 
         this.jump_flag = false;
         this.prev = 0;
-        this.jump_velocity = 7;
+        this.jump_velocity = 4.5;
         this.y_0 = 0.3;
-        this.gravity = 9.81;
+        this.gravity = 1.66;
         this.t = 0;
     }
     
@@ -128,7 +128,7 @@ export class Run extends Scene {
         else {
             this.body = this.body.times(Mat4.translation(0, f, 0));
             this.prev = this.body[1][3];
-            this.t += 0.01;
+            this.t += 0.1;
         }
         console.log(this.body)
     }
