@@ -41,8 +41,11 @@ export class Run extends Scene {
 
         // Dynamics
         this.speed = 4.0 // in units / second
-        this.speed = 10.0 // in units / second
+        //this.speed = 10.0 // in units / second
         //this.speed = 0.0 // Freeze scene
+
+        this.pause = false;
+        this.game = true;
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
@@ -96,27 +99,27 @@ export class Run extends Scene {
     }
     
     move_left() {
-        if ((this.position + -0.3) <= -6.0) {
+        if ((this.position + -0.6) <= -6.0) {
             console.log("Edge");
         } else {
-            this.body = this.body.times(Mat4.translation(-0.3, 0, 0))
-            this.position += -0.3;
+            this.body = this.body.times(Mat4.translation(-0.6, 0, 0))
+            this.position += -0.6;
         }
         //console.log(this.body)
         //console.log(this.position);
-        console.log(this.hall.active_steps[0][0])
+        //console.log(this.hall.active_steps[0][0])
     }
 
     move_right() {
-        if ((this.position + 0.3) >= 6.0) {
+        if ((this.position + 0.6) >= 6.0) {
             console.log("Edge");
         } else {
-            this.body = this.body.times(Mat4.translation(0.3, 0, 0))
-            this.position += 0.3;
+            this.body = this.body.times(Mat4.translation(0.6, 0, 0))
+            this.position += 0.6;
         }
         //console.log(this.body)
-        console.log(this.position);
-        console.log(this.hall.active_steps[0][0])
+        //console.log(this.position);
+        //console.log(this.hall.active_steps[0][0])
     }
 
     jump() {
@@ -136,12 +139,18 @@ export class Run extends Scene {
     }
 
     rotate_cw() {
+        if(!this.jump_flag){
+            return;
+        }
         this.rotated = false;
         this.hall.rotate('cw');
         this.rotated = true;
     }
 
     rotate_ccw() {
+        if(!this.jump_flag){
+            return;
+        }
         this.rotated = false;
         this.hall.rotate('ccw');
         this.rotated = true;
@@ -167,10 +176,12 @@ export class Run extends Scene {
 
         this.key_triggered_button("Rotate clockwise", ["r"], this.rotate_cw);
         this.key_triggered_button("Rotate counterclockwise", ["w"], this.rotate_ccw);
+        this.key_triggered_button("Pause", ["p"], () => this.pause = !this.pause);
     }
 
 
     draw_hall(context, program_state){
+        //console.log("start draw hall")
 
         const angle = this.hall.current_angle
         const n_steps = this.hall.active_steps.length
@@ -179,12 +190,64 @@ export class Run extends Scene {
         rotation_transform = rotation_transform.times(Mat4.translation(0, this.hall.width/2, 0))
         rotation_transform = rotation_transform.times(Mat4.rotation(angle, 0, 0, 1))
         rotation_transform = rotation_transform.times(Mat4.translation(0, -this.hall.width/2, 0))
-
+        let printed = false
+        let m = Mat4.rotation(angle, 0, 0, 1)
+        let v1, v2
+        let x1 = -1.5
+        let x2 = -1.5
+        let platform = false
+        let fullStep = false
         for (let i=0; i<n_steps; i++){
             const step_depth = this.hall.active_steps[i][0]
             const push_back_transform = Mat4.translation(0, 0, -step_depth)
             const step = this.hall.active_steps[i][1]
             step.draw(context, program_state, push_back_transform.times(rotation_transform), this.materials.test)
+
+            if(step_depth < 5 && step_depth > -5){
+
+                if(this.hall.active_steps[i][1].arrays.position.length == 16){
+                    fullStep = true
+                    continue;
+                }
+                    //console.log('new step')
+                    v1 = vec4(
+                        this.hall.active_steps[i][1].arrays.position[0][0],
+                        this.hall.active_steps[i][1].arrays.position[0][1]-1.5,
+                        this.hall.active_steps[i][1].arrays.position[0][2],
+                        1)
+
+                    v1 = m.times(v1)
+
+                    v2 = vec4(
+                        this.hall.active_steps[i][1].arrays.position[1][0],
+                        this.hall.active_steps[i][1].arrays.position[1][1]-1.5,
+                        this.hall.active_steps[i][1].arrays.position[1][2],
+                        1)
+
+                    v2 = m.times(v2)
+                    console.log(this.body)
+                    console.log(v1[0], v2[0], v1[1], v2[1])
+                    if (v2[1]< -1.45 || v1[1] < -1.45){
+                        console.log('platform at', v1[0], v2[0], v1[1], v2[1])
+                        x1 = v1[0]
+                        x2 = v2[0]
+                        platform = true
+                        //console.log(platform)
+                    }
+                    //console.log(v1)
+                    //console.log(v2)
+            }
+            //step.draw(context, program_state, push_back_transform.times(rotation_transform), this.materials.test)
+        }
+        if (!this.jump_flag){
+            if (Math.abs(this.hall.current_angle - this.hall.desired_angle) < 0.05) {
+                if ((!platform || (!(this.body[0][3] > x1 && this.body[0][3] < x2))) && !fullStep){
+                    console.log("no platform")
+                    console.log(this.body)
+                    console.log(x1, x2)
+                    this.game = false;
+                }
+            }
         }
     }
     rotated = false;
@@ -272,11 +335,17 @@ export class Run extends Scene {
         //this.shapes.square.draw(context, program_state, model_transform, this.materials.test)
 
         //Draw hall
-        const pull_distance = dt * this.speed
-        this.hall.pull_hall(pull_distance)
+        if(this.game && !this.pause){
+            const pull_distance = dt * this.speed
+            this.hall.pull_hall(pull_distance)
 
-        this.hall.clip_steps();
-        this.hall.make_steps();
+            this.hall.clip_steps();
+            this.hall.make_steps();
+
+            // this parameter should be between 0 and 1. 0.07 seems ok.
+            this.hall.update_current_angle(0.07)
+        }
+
 
 
         // The following code seems complicated but is only to automate a rotation every 2 seconds
@@ -292,8 +361,6 @@ export class Run extends Scene {
         } else {
             this.rotated = false
         }*/
-        // this parameter should be between 0 and 1. 0.07 seems ok.
-        this.hall.update_current_angle(0.07)
 
         this.draw_hall(context, program_state)
 
