@@ -44,6 +44,9 @@ export class Run extends Scene {
         this.speed = 10.0 // in units / second
         //this.speed = 0.0 // Freeze scene
 
+        this.game = true; //keep game playing
+        this.pause = false; //pause game
+
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
             torus: new defs.Torus(15, 15),
@@ -89,34 +92,32 @@ export class Run extends Scene {
 
         this.jump_flag = false;
         this.prev = 0;
-        this.jump_velocity = 4.5;
+        this.jump_velocity = 7;
         this.y_0 = 0.3;
-        this.gravity = 1.66;
+        this.gravity = 9.81;
         this.t = 0;
     }
     
     move_left() {
         if ((this.position + -0.3) <= -6.0) {
-            console.log("Edge");
+            //console.log("Edge");
         } else {
             this.body = this.body.times(Mat4.translation(-0.3, 0, 0))
             this.position += -0.3;
         }
         //console.log(this.body)
         //console.log(this.position);
-        console.log(this.hall.active_steps[0][0])
     }
 
     move_right() {
         if ((this.position + 0.3) >= 6.0) {
-            console.log("Edge");
+            //console.log("Edge");
         } else {
             this.body = this.body.times(Mat4.translation(0.3, 0, 0))
             this.position += 0.3;
         }
         //console.log(this.body)
-        console.log(this.position);
-        console.log(this.hall.active_steps[0][0])
+        //console.log(this.position);
     }
 
     jump() {
@@ -130,9 +131,9 @@ export class Run extends Scene {
         else {
             this.body = this.body.times(Mat4.translation(0, f, 0));
             this.prev = this.body[1][3];
-            this.t += 0.1;
+            this.t += 0.01;
         }
-        console.log(this.body)
+        //console.log(this.body)
     }
 
     rotate_cw() {
@@ -159,18 +160,24 @@ export class Run extends Scene {
         this.new_line();
         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
 */
-        this.key_triggered_button("Left", ["ArrowLeft"], this.move_left);
-        this.key_triggered_button("Right", ["ArrowRight"], this.move_right);
+        this.key_triggered_button("Left", ["j"], this.move_left);
+        this.key_triggered_button("Right", ["l"], this.move_right);
 
         // does nothing right now
         this.key_triggered_button("Jump", [" "], () => this.jump_flag = true);
 
         this.key_triggered_button("Rotate clockwise", ["r"], this.rotate_cw);
         this.key_triggered_button("Rotate counterclockwise", ["w"], this.rotate_ccw);
+        this.key_triggered_button("Pause", ["p"], () => this.pause = !this.pause);
     }
 
 
     draw_hall(context, program_state){
+
+        let bottom; //bottom panel
+        let top; //top panel
+        let right; //right panel
+        let left; //left panel
 
         const angle = this.hall.current_angle
         const n_steps = this.hall.active_steps.length
@@ -184,6 +191,62 @@ export class Run extends Scene {
             const step_depth = this.hall.active_steps[i][0]
             const push_back_transform = Mat4.translation(0, 0, -step_depth)
             const step = this.hall.active_steps[i][1]
+
+            //check if the square pieces are at the same depth the character is at
+            if ((step_depth < this.step_depth/2) && (step_depth > (-this.step_depth/2))) {
+
+                let vertex_0_x = rotation_transform.times(step.arrays.position)[0][0]
+                let vertex_1_x = rotation_transform.times(step.arrays.position)[1][0]
+                let vertex_0_y = rotation_transform.times(step.arrays.position)[0][1]
+                //console.log(rotation_transform.times(step.arrays.position))
+               /* console.log(rotation_transform.times(step.arrays.position)[0][0])
+                if(isNaN(rotation_transform.times(step.arrays.position)[0][1])){
+                    console.log("yuck")
+                    bottom = false; //bottom panel
+                    top = false; //top panel
+                    right = false; //right panel
+                    left = false; //left panel
+                } else {
+                    if(vertex_0_x == 1.5){
+                        right = true;
+                    }
+                    if(vertex_0_x == -1.5){
+                        left = true;
+                    }
+                    if(vertex_0_y == 3){
+                        top = true;
+                    }
+                    if(vertex_0_y < 0.1 && vertex_0_y > -0.1){
+                        bottom = true;
+                    }
+                }*/
+                //console.log(this.body[0][3])
+               if(!this.jump_flag){
+                    if(!(isNaN(rotation_transform.times(step.arrays.position)[0][1]))){
+                        //if(rotation_transform.times(step.arrays.position)[0][0] == -1.5 && rotation_transform.times(step.arrays.position)[0][0] == 1.5){
+                            //check that the square y value is the same as the character (y=0)
+                            if(rotation_transform.times(step.arrays.position)[0][1] < 0.1 && rotation_transform.times(step.arrays.position)[0][1] > -0.1){
+                                //rotation_transform.times(step.arrays.position) is a 4 x 3 matrix
+                                //4 rows one for each vertice of the square
+                                //3 columns x, y, z
+                                //check that the character is within the x coordinates of the square
+                                if(this.body[0][3] >= vertex_0_x && this.body[0][3] <= vertex_1_x){
+                                    console.log("meon")
+                                } else {
+                                    console.log("here")
+                                    this.game = false;
+                                }
+                            } else {
+                                if(Math.abs(rotation_transform.times(step.arrays.position)[0][0] - 1.5) < 0.005){
+                                    console.log("triangle")
+                                    this.game = false;
+                                }
+                            }
+                        //}
+                    }
+                }
+                //console.log(rotation_transform.times(step.arrays.position))
+            }
             step.draw(context, program_state, push_back_transform.times(rotation_transform), this.materials.test)
         }
     }
@@ -273,10 +336,15 @@ export class Run extends Scene {
 
         //Draw hall
         const pull_distance = dt * this.speed
-        this.hall.pull_hall(pull_distance)
+        if(this.game && !this.pause){//only false when player falls thru hole
+            this.hall.pull_hall(pull_distance)
 
-        this.hall.clip_steps();
-        this.hall.make_steps();
+            this.hall.clip_steps();
+            this.hall.make_steps();
+
+            // this parameter should be between 0 and 1. 0.07 seems ok.
+            this.hall.update_current_angle(0.07)
+        }
 
 
         // The following code seems complicated but is only to automate a rotation every 2 seconds
@@ -292,8 +360,6 @@ export class Run extends Scene {
         } else {
             this.rotated = false
         }*/
-        // this parameter should be between 0 and 1. 0.07 seems ok.
-        this.hall.update_current_angle(0.07)
 
         this.draw_hall(context, program_state)
 
@@ -369,7 +435,7 @@ class StepFactory{
         m = m.times(Mat4.scale(0.5, 1, this.depth/2))
 
         Square.insert_transformed_copy_into(s, [],m)
-
+        console.log(s)
         return s
     }
 
@@ -423,7 +489,7 @@ class Hall{
     make_steps(){
         //console.log(this.last_step_depth, this.max_depth)
         while(this.last_step_depth < this.max_depth){
-            //console.log('new step')
+            console.log('new step')
             this.active_steps.push(
                 [this.last_step_depth + this.step_depth*3, this.step_factory.make_full_step()]
             )
@@ -462,6 +528,32 @@ class Hall{
         )
 
         this.last_step_depth = (n_init_full-1)*this.step_depth;
+    }
+
+    check(){
+        for(let i=0; i<this.active_steps.length; i++){
+            if (this.active_steps[i][0] > -this.step_depth/2){
+                if (this.active_steps[i][0] < this.step_depth/2){
+                    //console.log(this.active_steps[i])
+                    let obj = this.active_steps[i] //[#, Step]
+                    let obj1 = this.active_steps[i][0] //[#]
+                    let obj2 = this.active_steps[i][1] //Step
+                    /*if(obj2.arrays.position.length != 16) {
+                        console.log(obj) //[#, Step]
+                        console.log(obj1) //[#]
+                        console.log(obj2) //Step
+                        console.log(obj2.arrays) //position and normal
+                        console.log(obj2.arrays.position) //position 4 vectors
+                        console.log(obj2.arrays.position[0]) //first vector
+                        console.log(obj2.arrays.position[0][1]) //y value
+                    }
+                    /*for (let i = 0; i < obj2.arrays.position.length; i++) {
+                        console.log(obj2.arrays.position[i][1])
+
+                    } */
+                }
+            }
+        }
     }
 }
 
