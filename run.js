@@ -46,6 +46,8 @@ export class Run extends Scene {
 
         this.game = true; //keep game playing
         this.pause = false; //pause game
+        this.rotater = false;
+        this.rotatel = false;
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
@@ -92,32 +94,34 @@ export class Run extends Scene {
 
         this.jump_flag = false;
         this.prev = 0;
-        this.jump_velocity = 7;
+        this.jump_velocity = 4.5;
         this.y_0 = 0.3;
-        this.gravity = 9.81;
+        this.gravity = 1.66;
         this.t = 0;
     }
     
     move_left() {
         if ((this.position + -0.3) <= -6.0) {
-            //console.log("Edge");
+            console.log("Edge");
         } else {
             this.body = this.body.times(Mat4.translation(-0.3, 0, 0))
             this.position += -0.3;
         }
         //console.log(this.body)
         //console.log(this.position);
+        console.log(this.hall.active_steps[0][0])
     }
 
     move_right() {
         if ((this.position + 0.3) >= 6.0) {
-            //console.log("Edge");
+            console.log("Edge");
         } else {
             this.body = this.body.times(Mat4.translation(0.3, 0, 0))
             this.position += 0.3;
         }
         //console.log(this.body)
-        //console.log(this.position);
+        console.log(this.position);
+        console.log(this.hall.active_steps[0][0])
     }
 
     jump() {
@@ -131,21 +135,23 @@ export class Run extends Scene {
         else {
             this.body = this.body.times(Mat4.translation(0, f, 0));
             this.prev = this.body[1][3];
-            this.t += 0.01;
+            this.t += 0.1;
         }
-        //console.log(this.body)
+        console.log(this.body)
     }
 
     rotate_cw() {
         this.rotated = false;
         this.hall.rotate('cw');
         this.rotated = true;
+        this.rotater = true;
     }
 
     rotate_ccw() {
         this.rotated = false;
         this.hall.rotate('ccw');
         this.rotated = true;
+        this.rotatel = true;
     }
 
     make_control_panel() {
@@ -160,14 +166,15 @@ export class Run extends Scene {
         this.new_line();
         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
 */
-        this.key_triggered_button("Left", ["j"], this.move_left);
-        this.key_triggered_button("Right", ["l"], this.move_right);
+        this.key_triggered_button("Left", ["ArrowLeft"], this.move_left);
+        this.key_triggered_button("Right", ["ArrowRight"], this.move_right);
 
         // does nothing right now
         this.key_triggered_button("Jump", [" "], () => this.jump_flag = true);
 
         this.key_triggered_button("Rotate clockwise", ["r"], this.rotate_cw);
         this.key_triggered_button("Rotate counterclockwise", ["w"], this.rotate_ccw);
+
         this.key_triggered_button("Pause", ["p"], () => this.pause = !this.pause);
     }
 
@@ -192,72 +199,54 @@ export class Run extends Scene {
             const push_back_transform = Mat4.translation(0, 0, -step_depth)
             const step = this.hall.active_steps[i][1]
 
-            if (check){
-                //check if the square pieces are at the same depth the character is at
-                if ((step_depth < this.step_depth/2) && (step_depth > (-this.step_depth/2))) {
+            if(!this.rotated){
+                if (check){
+                    //check if the square pieces are at the same depth the character is at
+                    if ((step_depth < this.step_depth/2) && (step_depth > (-this.step_depth/2))) {
 
-                    let vertex_0_x = rotation_transform.times(step.arrays.position)[0][0]
-                    let vertex_1_x = rotation_transform.times(step.arrays.position)[1][0]
-                    let vertex_0_y = rotation_transform.times(step.arrays.position)[0][1]
-                    //console.log(rotation_transform.times(step.arrays.position))
-                    /* console.log(rotation_transform.times(step.arrays.position)[0][0])
-                     if(isNaN(rotation_transform.times(step.arrays.position)[0][1])){
-                         console.log("yuck")
-                         bottom = false; //bottom panel
-                         top = false; //top panel
-                         right = false; //right panel
-                         left = false; //left panel
-                     } else {
-                         if(vertex_0_x == 1.5){
-                             right = true;
-                         }
-                         if(vertex_0_x == -1.5){
-                             left = true;
-                         }
-                         if(vertex_0_y == 3){
-                             top = true;
-                         }
-                         if(vertex_0_y < 0.1 && vertex_0_y > -0.1){
-                             bottom = true;
-                         }
-                     }*/
-                    //console.log(this.body[0][3])
-                    if(!this.jump_flag){
-                        if(!(isNaN(rotation_transform.times(step.arrays.position)[0][1]))){
-                            //if(rotation_transform.times(step.arrays.position)[0][0] == -1.5 && rotation_transform.times(step.arrays.position)[0][0] == 1.5){
-                            //check that the square y value is the same as the character (y=0)
-                            if(rotation_transform.times(step.arrays.position)[0][1] < 0.1 && rotation_transform.times(step.arrays.position)[0][1] > -0.1){
-                                //rotation_transform.times(step.arrays.position) is a 4 x 3 matrix
-                                //4 rows one for each vertice of the square
-                                //3 columns x, y, z
-                                //check that the character is within the x coordinates of the square
-                                if(this.body[0][3] >= vertex_0_x && this.body[0][3] <= vertex_1_x){
-                                    console.log("meon")
-                                    check = false;
-                                    console.log(this.body)
-                                    console.log(rotation_transform.times(step.arrays.position))
-                                } else {
-                                    console.log("here")
+                        let vertex_0_x = rotation_transform.times(step.arrays.position)[0][0]
+                        let vertex_1_x = rotation_transform.times(step.arrays.position)[1][0]
+                        let vertex_0_y = rotation_transform.times(step.arrays.position)[0][1]
+                        //console.log(rotation_transform.times(step.arrays.position))
+                        // console.log(rotation_transform.times(step.arrays.position)[0][0])
+                        //console.log(this.body[0][3])
+                        if(!this.jump_flag){
+                            if(!(isNaN(rotation_transform.times(step.arrays.position)[0][1]))){
+                                //if(rotation_transform.times(step.arrays.position)[0][0] == -1.5 && rotation_transform.times(step.arrays.position)[0][0] == 1.5){
+                                //check that the square y value is the same as the character (y=0)
+                                if(rotation_transform.times(step.arrays.position)[0][1] < 0.1 && rotation_transform.times(step.arrays.position)[0][1] > -0.1){
+                                    //rotation_transform.times(step.arrays.position) is a 4 x 3 matrix
+                                    //4 rows one for each vertice of the square
+                                    //3 columns x, y, z
+                                    //check that the character is within the x coordinates of the square
+                                    if(this.body[0][3] >= vertex_0_x && this.body[0][3] <= vertex_1_x){
+                                        console.log("meon")
+                                        check = false;
+                                        console.log(this.body)
+                                        console.log(rotation_transform.times(step.arrays.position))
+                                    } else {
+                                        console.log("here")
+                                        this.game = false;
+                                        console.log(this.body)
+                                        console.log(rotation_transform.times(step.arrays.position))
+                                        this.body = this.body.times(Mat4.translation(0, -100, 0));
+                                    }
+                                }  else {
+                                    console.log("nimp")
                                     this.game = false;
                                     console.log(this.body)
                                     console.log(rotation_transform.times(step.arrays.position))
                                     this.body = this.body.times(Mat4.translation(0, -100, 0));
                                 }
-                            }  else {
-                                console.log("nimp")
-                                this.game = false;
-                                console.log(this.body)
-                                console.log(rotation_transform.times(step.arrays.position))
-                                this.body = this.body.times(Mat4.translation(0, -100, 0));
+                                //}
                             }
-                            //}
                         }
+                        //console.log(rotation_transform.times(step.arrays.position))
+                    } else {
+                        console.log("lim")
+                        console.log(this.body)
+                        console.log(rotation_transform.times(step.arrays.position))
                     }
-                    //console.log(rotation_transform.times(step.arrays.position))
-                } else {
-                    console.log("lim")
-                    console.log(this.body)
-                    console.log(rotation_transform.times(step.arrays.position))
                 }
             }
             step.draw(context, program_state, push_back_transform.times(rotation_transform), this.materials.test)
@@ -448,7 +437,7 @@ class StepFactory{
         m = m.times(Mat4.scale(0.5, 1, this.depth/2))
 
         Square.insert_transformed_copy_into(s, [],m)
-        console.log(s)
+
         return s
     }
 
@@ -502,7 +491,7 @@ class Hall{
     make_steps(){
         //console.log(this.last_step_depth, this.max_depth)
         while(this.last_step_depth < this.max_depth){
-            console.log('new step')
+            //console.log('new step')
             this.active_steps.push(
                 [this.last_step_depth + this.step_depth*3, this.step_factory.make_full_step()]
             )
@@ -541,32 +530,6 @@ class Hall{
         )
 
         this.last_step_depth = (n_init_full-1)*this.step_depth;
-    }
-
-    check(){
-        for(let i=0; i<this.active_steps.length; i++){
-            if (this.active_steps[i][0] > -this.step_depth/2){
-                if (this.active_steps[i][0] < this.step_depth/2){
-                    //console.log(this.active_steps[i])
-                    let obj = this.active_steps[i] //[#, Step]
-                    let obj1 = this.active_steps[i][0] //[#]
-                    let obj2 = this.active_steps[i][1] //Step
-                    /*if(obj2.arrays.position.length != 16) {
-                        console.log(obj) //[#, Step]
-                        console.log(obj1) //[#]
-                        console.log(obj2) //Step
-                        console.log(obj2.arrays) //position and normal
-                        console.log(obj2.arrays.position) //position 4 vectors
-                        console.log(obj2.arrays.position[0]) //first vector
-                        console.log(obj2.arrays.position[0][1]) //y value
-                    }
-                    /*for (let i = 0; i < obj2.arrays.position.length; i++) {
-                        console.log(obj2.arrays.position[i][1])
-
-                    } */
-                }
-            }
-        }
     }
 }
 
