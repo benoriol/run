@@ -102,8 +102,9 @@ export class Run extends Scene {
             this.body = this.body.times(Mat4.translation(-0.3, 0, 0))
             this.position += -0.3;
         }
-        console.log(this.body)
-        console.log(this.position);
+        //console.log(this.body)
+        //console.log(this.position);
+        console.log(this.hall.active_steps[0][0])
     }
 
     move_right() {
@@ -113,8 +114,9 @@ export class Run extends Scene {
             this.body = this.body.times(Mat4.translation(0.3, 0, 0))
             this.position += 0.3;
         }
-        console.log(this.body)
+        //console.log(this.body)
         console.log(this.position);
+        console.log(this.hall.active_steps[0][0])
     }
 
     jump() {
@@ -157,8 +159,8 @@ export class Run extends Scene {
         this.new_line();
         this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
 */
-        this.key_triggered_button("Left", ["j"], this.move_left);
-        this.key_triggered_button("Right", ["l"], this.move_right);
+        this.key_triggered_button("Left", ["ArrowLeft"], this.move_left);
+        this.key_triggered_button("Right", ["ArrowRight"], this.move_right);
 
         // does nothing right now
         this.key_triggered_button("Jump", [" "], () => this.jump_flag = true);
