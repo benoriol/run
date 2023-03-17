@@ -199,6 +199,7 @@ export class Run extends Scene {
             const push_back_transform = Mat4.translation(0, 0, -step_depth)
             const step = this.hall.active_steps[i][1]
 
+            console.log(rotation_transform.times(step.arrays.position))
             if(!this.rotated){
                 if (check){
                     //check if the square pieces are at the same depth the character is at
@@ -220,22 +221,22 @@ export class Run extends Scene {
                                     //3 columns x, y, z
                                     //check that the character is within the x coordinates of the square
                                     if(this.body[0][3] >= vertex_0_x && this.body[0][3] <= vertex_1_x){
-                                        console.log("meon")
+                                        //console.log("meon")
                                         check = false;
-                                        console.log(this.body)
-                                        console.log(rotation_transform.times(step.arrays.position))
+                                        //console.log(this.body)
+                                        //console.log(rotation_transform.times(step.arrays.position))
                                     } else {
-                                        console.log("here")
+                                        //console.log("here")
                                         this.game = false;
-                                        console.log(this.body)
-                                        console.log(rotation_transform.times(step.arrays.position))
+                                        //console.log(this.body)
+                                        //console.log(rotation_transform.times(step.arrays.position))
                                         this.body = this.body.times(Mat4.translation(0, -100, 0));
                                     }
                                 }  else {
-                                    console.log("nimp")
+                                    //console.log("nimp")
                                     this.game = false;
-                                    console.log(this.body)
-                                    console.log(rotation_transform.times(step.arrays.position))
+                                    //console.log(this.body)
+                                    //console.log(rotation_transform.times(step.arrays.position))
                                     this.body = this.body.times(Mat4.translation(0, -100, 0));
                                 }
                                 //}
@@ -243,9 +244,9 @@ export class Run extends Scene {
                         }
                         //console.log(rotation_transform.times(step.arrays.position))
                     } else {
-                        console.log("lim")
-                        console.log(this.body)
-                        console.log(rotation_transform.times(step.arrays.position))
+                        //console.log("lim")
+                        //console.log(this.body)
+                        //console.log(rotation_transform.times(step.arrays.position))
                     }
                 }
             }
