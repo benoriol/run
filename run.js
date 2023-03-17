@@ -194,7 +194,7 @@ export class Run extends Scene {
         let m = Mat4.rotation(angle, 0, 0, 1)
         let v1, v2
         let x1 = -1.5
-        let x2 = -1.5
+        let x2 = 1.5
         let platform = false
         let fullStep = false
         for (let i=0; i<n_steps; i++){
