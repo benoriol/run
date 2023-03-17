@@ -186,44 +186,45 @@ export class Run extends Scene {
         rotation_transform = rotation_transform.times(Mat4.translation(0, this.hall.width/2, 0))
         rotation_transform = rotation_transform.times(Mat4.rotation(angle, 0, 0, 1))
         rotation_transform = rotation_transform.times(Mat4.translation(0, -this.hall.width/2, 0))
-
+        let check = true;
         for (let i=0; i<n_steps; i++){
             const step_depth = this.hall.active_steps[i][0]
             const push_back_transform = Mat4.translation(0, 0, -step_depth)
             const step = this.hall.active_steps[i][1]
 
-            //check if the square pieces are at the same depth the character is at
-            if ((step_depth < this.step_depth/2) && (step_depth > (-this.step_depth/2))) {
+            if (check){
+                //check if the square pieces are at the same depth the character is at
+                if ((step_depth < this.step_depth/2) && (step_depth > (-this.step_depth/2))) {
 
-                let vertex_0_x = rotation_transform.times(step.arrays.position)[0][0]
-                let vertex_1_x = rotation_transform.times(step.arrays.position)[1][0]
-                let vertex_0_y = rotation_transform.times(step.arrays.position)[0][1]
-                //console.log(rotation_transform.times(step.arrays.position))
-               /* console.log(rotation_transform.times(step.arrays.position)[0][0])
-                if(isNaN(rotation_transform.times(step.arrays.position)[0][1])){
-                    console.log("yuck")
-                    bottom = false; //bottom panel
-                    top = false; //top panel
-                    right = false; //right panel
-                    left = false; //left panel
-                } else {
-                    if(vertex_0_x == 1.5){
-                        right = true;
-                    }
-                    if(vertex_0_x == -1.5){
-                        left = true;
-                    }
-                    if(vertex_0_y == 3){
-                        top = true;
-                    }
-                    if(vertex_0_y < 0.1 && vertex_0_y > -0.1){
-                        bottom = true;
-                    }
-                }*/
-                //console.log(this.body[0][3])
-               if(!this.jump_flag){
-                    if(!(isNaN(rotation_transform.times(step.arrays.position)[0][1]))){
-                        //if(rotation_transform.times(step.arrays.position)[0][0] == -1.5 && rotation_transform.times(step.arrays.position)[0][0] == 1.5){
+                    let vertex_0_x = rotation_transform.times(step.arrays.position)[0][0]
+                    let vertex_1_x = rotation_transform.times(step.arrays.position)[1][0]
+                    let vertex_0_y = rotation_transform.times(step.arrays.position)[0][1]
+                    //console.log(rotation_transform.times(step.arrays.position))
+                    /* console.log(rotation_transform.times(step.arrays.position)[0][0])
+                     if(isNaN(rotation_transform.times(step.arrays.position)[0][1])){
+                         console.log("yuck")
+                         bottom = false; //bottom panel
+                         top = false; //top panel
+                         right = false; //right panel
+                         left = false; //left panel
+                     } else {
+                         if(vertex_0_x == 1.5){
+                             right = true;
+                         }
+                         if(vertex_0_x == -1.5){
+                             left = true;
+                         }
+                         if(vertex_0_y == 3){
+                             top = true;
+                         }
+                         if(vertex_0_y < 0.1 && vertex_0_y > -0.1){
+                             bottom = true;
+                         }
+                     }*/
+                    //console.log(this.body[0][3])
+                    if(!this.jump_flag){
+                        if(!(isNaN(rotation_transform.times(step.arrays.position)[0][1]))){
+                            //if(rotation_transform.times(step.arrays.position)[0][0] == -1.5 && rotation_transform.times(step.arrays.position)[0][0] == 1.5){
                             //check that the square y value is the same as the character (y=0)
                             if(rotation_transform.times(step.arrays.position)[0][1] < 0.1 && rotation_transform.times(step.arrays.position)[0][1] > -0.1){
                                 //rotation_transform.times(step.arrays.position) is a 4 x 3 matrix
@@ -232,20 +233,32 @@ export class Run extends Scene {
                                 //check that the character is within the x coordinates of the square
                                 if(this.body[0][3] >= vertex_0_x && this.body[0][3] <= vertex_1_x){
                                     console.log("meon")
+                                    check = false;
+                                    console.log(this.body)
+                                    console.log(rotation_transform.times(step.arrays.position))
                                 } else {
                                     console.log("here")
                                     this.game = false;
+                                    console.log(this.body)
+                                    console.log(rotation_transform.times(step.arrays.position))
+                                    this.body = this.body.times(Mat4.translation(0, -100, 0));
                                 }
-                            } else {
-                                if(Math.abs(rotation_transform.times(step.arrays.position)[0][0] - 1.5) < 0.005){
-                                    console.log("triangle")
-                                    this.game = false;
-                                }
+                            }  else {
+                                console.log("nimp")
+                                this.game = false;
+                                console.log(this.body)
+                                console.log(rotation_transform.times(step.arrays.position))
+                                this.body = this.body.times(Mat4.translation(0, -100, 0));
                             }
-                        //}
+                            //}
+                        }
                     }
+                    //console.log(rotation_transform.times(step.arrays.position))
+                } else {
+                    console.log("lim")
+                    console.log(this.body)
+                    console.log(rotation_transform.times(step.arrays.position))
                 }
-                //console.log(rotation_transform.times(step.arrays.position))
             }
             step.draw(context, program_state, push_back_transform.times(rotation_transform), this.materials.test)
         }
